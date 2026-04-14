@@ -80,6 +80,7 @@ export default function SimpleSignup() {
         email,
         password,
         options: {
+          emailRedirectTo: getEmailRedirectTo(),
           data: {
             first_name: firstName,
             last_name: lastName,
