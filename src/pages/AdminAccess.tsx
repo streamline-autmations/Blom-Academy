@@ -92,23 +92,18 @@ export default function AdminAccess() {
 
     try {
       const { data, error: queryError } = await supabase
-        .from('enrollments')
-        .select(`
-          enrolled_at,
-          courses!inner(slug, title)
-        `)
-        .eq('user_id', userId.trim());
+        .rpc('get_user_enrollments', { p_user_id: userId.trim() });
 
       if (queryError) {
         console.error('❌ Query Error:', queryError);
         return;
       }
 
-      const accessData: UserAccess[] = data?.map(item => ({
-        slug: item.courses.slug,
-        title: item.courses.title,
+      const accessData: UserAccess[] = (data || []).map((item: any) => ({
+        slug: item.slug,
+        title: item.title,
         enrolled_at: item.enrolled_at
-      })) || [];
+      }));
 
       setUserAccess(accessData);
     } catch (error) {
