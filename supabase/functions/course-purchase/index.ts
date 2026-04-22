@@ -46,7 +46,7 @@ serve(async (req) => {
       .select('id, invitation_status')
       .eq('order_id', order_id)
       .eq('course_slug', course_slug)
-      .in('invitation_status', ['sent', 'enrolled'])
+      .in('invitation_status', ['sent', 'redeemed'])
       .maybeSingle()
 
     if (existing) {
@@ -107,7 +107,7 @@ serve(async (req) => {
 
       await supabase
         .from('course_purchases')
-        .update({ invitation_status: 'enrolled', academy_user_id: userId })
+        .update({ invitation_status: 'redeemed', academy_user_id: userId })
         .eq('order_id', order_id)
         .eq('course_slug', course_slug)
 
