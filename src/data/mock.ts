@@ -75,7 +75,7 @@ const allCourses: Course[] = [
     ]
   },
   {
-    id: "blom-flower-workshop",
+    id: "7c5276c1-9207-4653-89c3-bb4c675db5e2",
     title: "Flower Nail Art Workshop",
     slug: "blom-flower-watercolor-workshop",
     cover: "/Blom-flower-workshop.webp",
@@ -119,10 +119,10 @@ export const modules: Module[] = [
   { id: "xmas-m5", courseId: "watercolour-christmas", title: "Module 5 – Certificate of Completion", order: 5, icon: "Compass" },
   
   // Flower Nail Art Workshop Modules
-  { id: "flower-m1", courseId: "blom-flower-workshop", title: "Module 1 – Welcome & Materials", order: 1, icon: "Sparkles" },
-  { id: "flower-m2", courseId: "blom-flower-workshop", title: "Module 2 – Practice Flowers", order: 2, icon: "Flower" },
-  { id: "flower-m3", courseId: "blom-flower-workshop", title: "Module 3 – Step-by-Step Designs", order: 3, icon: "Paintbrush" },
-  { id: "flower-m4", courseId: "blom-flower-workshop", title: "Module 4 – Certificate of Completion", order: 4, icon: "Award" },
+  { id: "flower-m1", courseId: "7c5276c1-9207-4653-89c3-bb4c675db5e2", title: "Module 1 – Welcome & Materials", order: 1, icon: "Sparkles" },
+  { id: "flower-m2", courseId: "7c5276c1-9207-4653-89c3-bb4c675db5e2", title: "Module 2 – Practice Flowers", order: 2, icon: "Flower" },
+  { id: "flower-m3", courseId: "7c5276c1-9207-4653-89c3-bb4c675db5e2", title: "Module 3 – Step-by-Step Designs", order: 3, icon: "Paintbrush" },
+  { id: "flower-m4", courseId: "7c5276c1-9207-4653-89c3-bb4c675db5e2", title: "Module 4 – Certificate of Completion", order: 4, icon: "Award" },
 
   // Faded Flowers Workshop Modules
   { id: "ff-m1", courseId: "faded-flowers-workshop", title: "Module 1 – Welcome & Materials", order: 1, icon: "Sparkles" },
