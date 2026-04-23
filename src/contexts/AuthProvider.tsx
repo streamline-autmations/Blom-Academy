@@ -225,58 +225,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state changed:', event, session?.user?.id);
-      
+
       if (!mounted) return;
-      
-      // Only process meaningful auth changes, not just token refreshes
-      if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token refreshed, keeping existing state');
-        return;
-      }
-      
-      if (session?.user) {
-        console.log('✅ Session found in state change, setting user:', session.user.id);
-        setSession(session);
-        setUser(session.user);
-        
-        // Try to fetch profile for new session with fallback (skip if already failed or disabled)
-        if (!DISABLE_PROFILE_FETCH && !profileFetchFailedRef.current) {
-          try {
-            console.log('👤 Fetching profile for state change user:', session.user.id);
-            const profileData = await fetchUserProfile(session.user.id);
-            console.log('👤 Profile data from state change:', profileData);
-            
-            if (!mounted) return;
-            
-            if (profileData) {
-              setProfile(profileData);
-              setIsProfileComplete(!!(profileData.first_name && profileData.last_name));
-              console.log('✅ Profile set from state change, complete:', !!(profileData.first_name && profileData.last_name));
-            } else {
-              console.log('⚠️ No profile data from state change - user needs setup');
-              setProfile(null);
-              setIsProfileComplete(false);
-            }
-          } catch (profileError) {
-            console.log('⚠️ Profile fetch failed in state change, marking as failed:', profileError);
-            if (!mounted) return;
-            profileFetchFailedRef.current = true;
-            setProfileFetchFailed(true);
-            setProfile(null);
-            setIsProfileComplete(false);
-          }
-        } else {
-          console.log('⏭️ Skipping profile fetch in state change - disabled or previously failed');
-          if (!mounted) return;
-          setProfile(null);
-          setIsProfileComplete(false);
-        }
-      } else {
-        console.log('❌ No session in state change');
+
+      // Only treat an explicit sign-out as a logout. Ignore spurious null-session
+      // events from token refresh hiccups, tab focus, etc., which would otherwise
+      // kick the user out mid-session.
+      if (event === 'SIGNED_OUT') {
         setSession(null);
         setUser(null);
         setProfile(null);
         setIsProfileComplete(false);
+        return;
+      }
+
+      // Silently update the session on token refresh so the supabase client
+      // keeps a valid access_token without re-fetching the profile.
+      if (event === 'TOKEN_REFRESHED') {
+        if (session) setSession(session);
+        return;
+      }
+
+      if (!session?.user) {
+        // Some events (USER_UPDATED, INITIAL_SESSION with no user, etc.) may fire
+        // without a session payload — keep whatever state we already have.
+        return;
+      }
+
+      setSession(session);
+      setUser(session.user);
+
+      if (DISABLE_PROFILE_FETCH || profileFetchFailedRef.current) return;
+
+      try {
+        const profileData = await fetchUserProfile(session.user.id);
+        if (!mounted) return;
+        if (profileData) {
+          setProfile(profileData);
+          setIsProfileComplete(!!(profileData.first_name && profileData.last_name));
+        }
+      } catch (profileError) {
+        console.log('⚠️ Profile fetch failed in state change:', profileError);
+        if (!mounted) return;
+        profileFetchFailedRef.current = true;
+        setProfileFetchFailed(true);
       }
     });
 

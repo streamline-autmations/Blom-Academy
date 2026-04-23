@@ -8,83 +8,99 @@ type EnrollmentRow = {
   courses: { slug: string; title: string } | null;
 };
 
+// Module-level cache keyed by userId so enrollments survive page navigation.
+const cache = new Map<string, EnrollmentRow[]>();
+
 export const useEnrolledCourses = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const userId = user?.id ?? '';
+  const [rows, setRows] = useState<EnrollmentRow[] | null>(() =>
+    userId ? cache.get(userId) ?? null : null
+  );
+  const [loading, setLoading] = useState(rows === null);
   const [error, setError] = useState<string | null>(null);
-  const [rows, setRows] = useState<EnrollmentRow[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
-      if (!user) {
+      if (!userId) {
         setRows([]);
         setLoading(false);
         return;
       }
 
-      setLoading(true);
+      const cached = cache.get(userId);
+      if (cached) {
+        setRows(cached);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       const { data, error } = await supabase
         .from('enrollments')
         .select('courses!inner(slug, title)')
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (cancelled) return;
 
-      if (error) {
-        const { data: enrollmentRows, error: enrollmentsError } = await supabase
-          .from('enrollments')
-          .select('course_id')
-          .eq('user_id', user.id);
-
-        if (cancelled) return;
-
-        if (enrollmentsError) {
-          setRows([]);
-          setError(enrollmentsError.message);
-          setLoading(false);
-          return;
-        }
-
-        const courseIds = (enrollmentRows ?? [])
-          .map((r) => (r as any).course_id)
-          .filter(Boolean) as string[];
-
-        if (courseIds.length === 0) {
-          setRows([]);
-          setLoading(false);
-          return;
-        }
-
-        const { data: coursesRows, error: coursesError } = await supabase
-          .from('courses')
-          .select('id, slug, title')
-          .in('id', courseIds);
-
-        if (cancelled) return;
-
-        if (coursesError) {
-          setRows([]);
-          setError(coursesError.message);
-          setLoading(false);
-          return;
-        }
-
-        const byId = new Map((coursesRows ?? []).map((c: any) => [c.id, c] as const));
-        const mapped: EnrollmentRow[] = courseIds
-          .map((id) => byId.get(id))
-          .filter(Boolean)
-          .map((c: any) => ({ courses: { slug: c.slug, title: c.title } }));
-
+      if (!error && data) {
+        const mapped = data as unknown as EnrollmentRow[];
+        cache.set(userId, mapped);
         setRows(mapped);
         setLoading(false);
         return;
       }
 
-      setRows((data ?? []) as unknown as EnrollmentRow[]);
+      const { data: enrollmentRows, error: enrollmentsError } = await supabase
+        .from('enrollments')
+        .select('course_id')
+        .eq('user_id', userId);
+
+      if (cancelled) return;
+
+      if (enrollmentsError) {
+        if (!cached) setRows([]);
+        setError(enrollmentsError.message);
+        setLoading(false);
+        return;
+      }
+
+      const courseIds = (enrollmentRows ?? [])
+        .map((r) => (r as any).course_id)
+        .filter(Boolean) as string[];
+
+      if (courseIds.length === 0) {
+        cache.set(userId, []);
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: coursesRows, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, slug, title')
+        .in('id', courseIds);
+
+      if (cancelled) return;
+
+      if (coursesError) {
+        if (!cached) setRows([]);
+        setError(coursesError.message);
+        setLoading(false);
+        return;
+      }
+
+      const byId = new Map((coursesRows ?? []).map((c: any) => [c.id, c] as const));
+      const mapped: EnrollmentRow[] = courseIds
+        .map((id) => byId.get(id))
+        .filter(Boolean)
+        .map((c: any) => ({ courses: { slug: c.slug, title: c.title } }));
+
+      cache.set(userId, mapped);
+      setRows(mapped);
       setLoading(false);
     };
 
@@ -92,7 +108,7 @@ export const useEnrolledCourses = () => {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [userId]);
 
   const enrolledCourses = useMemo<Course[]>(() => {
     const mockBySlug = new Map(mockCourses.map((c) => [c.slug, c] as const));
