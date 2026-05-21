@@ -111,6 +111,24 @@ serve(async (req) => {
         .eq('order_id', order_id)
         .eq('course_slug', course_slug)
 
+      // Notify the returning customer too. They don't need an invite (they already
+      // have an account), but they must still get an email/WhatsApp confirming the
+      // new course was added — previously this branch sent nothing at all.
+      const courseUrl = `${APP_BASE_URL}/login?course=${encodeURIComponent(course_slug)}`
+      fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: normalizedEmail,
+          name: name ?? normalizedEmail,
+          phone: phone ?? '',
+          course_slug: courseTitle,        // n8n template shows the course title
+          invite_url: courseUrl,           // existing user → straight to login/course, not an invite token
+          expires_at: null,
+          is_existing_user: true,          // lets the n8n template tailor wording for returning members
+        }),
+      }).catch((err) => console.error('n8n webhook error (existing user):', err))
+
       action = 'enrolled'
 
     } else {
