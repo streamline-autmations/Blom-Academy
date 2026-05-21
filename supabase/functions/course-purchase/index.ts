@@ -56,11 +56,14 @@ serve(async (req) => {
     // ── 2. Resolve course title ──────────────────────────────────────────────
     const { data: course } = await supabase
       .from('courses')
-      .select('title')
+      .select('id, title')
       .eq('slug', course_slug)
       .maybeSingle()
 
     const courseTitle = course?.title ?? course_slug
+    // create_course_invite expects the course UUID here, not the slug. Fall back to
+    // the slug only if the course wasn't found (preserves old behaviour, no regression).
+    const courseIdForInvite = course?.id ?? course_slug
 
     // ── 3. Upsert course_purchases row ───────────────────────────────────────
     // Insert if not present; if a row already exists for this order+course
@@ -134,7 +137,7 @@ serve(async (req) => {
     } else {
       // ── 4b. New user → create invite + fire n8n ───────────────────────────
       const { data: inviteData, error: inviteError } = await supabase.rpc('create_course_invite', {
-        p_course_id: course_slug,
+        p_course_id: courseIdForInvite,
         p_email: normalizedEmail,
         p_expires_in_days: INVITE_EXPIRES_DAYS,
       })
