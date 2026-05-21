@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
 const N8N_WEBHOOK_URL = 'https://dockerfile-1n82.onrender.com/webhook/course-invite'
 const APP_BASE_URL = 'https://blom-academy.vercel.app'
+const ACADEMY_URL = 'https://khydacdmfnwfwytqdoei.supabase.co'
 const INVITE_EXPIRES_DAYS = 60
 
 const corsHeaders = {
@@ -17,14 +18,13 @@ serve(async (req) => {
   }
 
   try {
-    // ── Auth: shared webhook secret ──────────────────────────────────────────
+    // Auth: shared webhook secret
     const secret = Deno.env.get('WEBHOOK_SECRET')
     const provided = (req.headers.get('Authorization') ?? '').replace('Bearer ', '').trim()
     if (secret && provided !== secret) {
       return json({ error: 'Unauthorized' }, 401)
     }
 
-    // ── Parse body ───────────────────────────────────────────────────────────
     const { order_id, email, name, phone, course_slug, amount_cents } = await req.json()
 
     if (!order_id || !email || !course_slug) {
@@ -33,15 +33,28 @@ serve(async (req) => {
 
     const normalizedEmail = email.toLowerCase().trim()
 
-    const supabase = createClient(
+    // This function is deployed on the STORE project. It uses TWO clients:
+    //  - store:   the auto-injected Store DB — owns the `course_purchases` table (bookkeeping).
+    //  - academy: the Academy DB — owns courses, users, invites and enrolment, and is where
+    //             invite redemption happens, so invites MUST be created here.
+    const store = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // ── 1. Idempotency check ─────────────────────────────────────────────────
-    // Skip if we already successfully processed this order+course
-    const { data: existing } = await supabase
+    const academyKey = Deno.env.get('ACADEMY_SERVICE_KEY')
+    if (!academyKey) {
+      return json({ error: 'ACADEMY_SERVICE_KEY secret is not configured on this function' }, 500)
+    }
+    const academy = createClient(
+      ACADEMY_URL,
+      academyKey,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    // 1. Idempotency check (STORE course_purchases)
+    const { data: existing } = await store
       .from('course_purchases')
       .select('id, invitation_status')
       .eq('order_id', order_id)
@@ -53,22 +66,19 @@ serve(async (req) => {
       return json({ success: true, action: 'skipped', reason: 'already_processed', order_id })
     }
 
-    // ── 2. Resolve course title ──────────────────────────────────────────────
-    const { data: course } = await supabase
+    // 2. Resolve course (ACADEMY) — need the UUID for create_course_invite
+    const { data: course } = await academy
       .from('courses')
       .select('id, title')
       .eq('slug', course_slug)
       .maybeSingle()
 
     const courseTitle = course?.title ?? course_slug
-    // create_course_invite expects the course UUID here, not the slug. Fall back to
-    // the slug only if the course wasn't found (preserves old behaviour, no regression).
+    // create_course_invite (Academy) expects the course UUID, not the slug.
     const courseIdForInvite = course?.id ?? course_slug
 
-    // ── 3. Upsert course_purchases row ───────────────────────────────────────
-    // Insert if not present; if a row already exists for this order+course
-    // (e.g. created by the Shop) just update it so we track the full data.
-    const { data: purchaseRow } = await supabase
+    // 3. Ensure a STORE course_purchases row exists (the storefront usually made it)
+    const { data: purchaseRow } = await store
       .from('course_purchases')
       .select('id')
       .eq('order_id', order_id)
@@ -76,7 +86,7 @@ serve(async (req) => {
       .maybeSingle()
 
     if (!purchaseRow) {
-      await supabase.from('course_purchases').insert({
+      await store.from('course_purchases').insert({
         order_id,
         course_slug,
         course_title: courseTitle,
@@ -94,29 +104,27 @@ serve(async (req) => {
       })
     }
 
-    // ── 4. Check if buyer already has an Academy account ────────────────────
-    const { data: userId } = await supabase.rpc('get_user_id_by_email', {
+    // 4. Does the buyer already have an Academy account?
+    const { data: userId } = await academy.rpc('get_user_id_by_email', {
       p_email: normalizedEmail,
     })
 
     let action: string
 
     if (userId) {
-      // ── 4a. Existing user → enroll directly, no invite needed ─────────────
-      await supabase.rpc('enroll_user_by_id', {
+      // 4a. Existing Academy user — enrol directly (ACADEMY)
+      await academy.rpc('enroll_user_by_id', {
         p_user_id: userId,
         p_course_slugs: [course_slug],
       })
 
-      await supabase
+      await store
         .from('course_purchases')
         .update({ invitation_status: 'redeemed', academy_user_id: userId })
         .eq('order_id', order_id)
         .eq('course_slug', course_slug)
 
-      // Notify the returning customer too. They don't need an invite (they already
-      // have an account), but they must still get an email/WhatsApp confirming the
-      // new course was added — previously this branch sent nothing at all.
+      // Notify the returning customer too (previously this branch sent nothing).
       const courseUrl = `${APP_BASE_URL}/login?course=${encodeURIComponent(course_slug)}`
       fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
@@ -125,18 +133,18 @@ serve(async (req) => {
           to: normalizedEmail,
           name: name ?? normalizedEmail,
           phone: phone ?? '',
-          course_slug: courseTitle,        // n8n template shows the course title
-          invite_url: courseUrl,           // existing user → straight to login/course, not an invite token
+          course_slug: courseTitle,
+          invite_url: courseUrl,
           expires_at: null,
-          is_existing_user: true,          // lets the n8n template tailor wording for returning members
+          is_existing_user: true,
         }),
       }).catch((err) => console.error('n8n webhook error (existing user):', err))
 
       action = 'enrolled'
 
     } else {
-      // ── 4b. New user → create invite + fire n8n ───────────────────────────
-      const { data: inviteData, error: inviteError } = await supabase.rpc('create_course_invite', {
+      // 4b. New user — create invite (ACADEMY) + fire n8n
+      const { data: inviteData, error: inviteError } = await academy.rpc('create_course_invite', {
         p_course_id: courseIdForInvite,
         p_email: normalizedEmail,
         p_expires_in_days: INVITE_EXPIRES_DAYS,
@@ -148,7 +156,6 @@ serve(async (req) => {
 
       const inviteUrl = `${APP_BASE_URL}/accept-invite?invite=${inviteData.token}`
 
-      // Fire n8n for email + WhatsApp — best-effort, don't block response
       fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -156,13 +163,13 @@ serve(async (req) => {
           to: normalizedEmail,
           name: name ?? normalizedEmail,
           phone: phone ?? '',
-          course_slug: courseTitle,         // n8n email template shows the course title
+          course_slug: courseTitle,
           invite_url: inviteUrl,
           expires_at: inviteData.expires_at,
         }),
       }).catch((err) => console.error('n8n webhook error:', err))
 
-      await supabase
+      await store
         .from('course_purchases')
         .update({
           invitation_status: 'sent',
