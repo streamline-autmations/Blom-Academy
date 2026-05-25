@@ -104,6 +104,16 @@ export default function SimpleSignup() {
           return;
         }
 
+        // Existing account: don't show a scary error — send them to log in,
+        // carrying the invite so the course is claimed right after sign-in.
+        const isAlreadyRegistered =
+          status === 422 || /already registered|already been registered|user already exists/i.test(message);
+        if (isAlreadyRegistered) {
+          showImportantSuccess('Looks like you already have an account — taking you to log in.');
+          navigate(inviteToken ? `/login?invite=${inviteToken}` : '/login');
+          return;
+        }
+
         throw new Error(`Signup failed: ${message}`);
       }
 
@@ -114,6 +124,16 @@ export default function SimpleSignup() {
 
       if (!createdUser) {
         throw new Error('Signup completed but no user was returned');
+      }
+
+      // When the email already exists, Supabase returns an obfuscated user with
+      // no linked identities (and no error). Route them to log in instead of the
+      // confusing "check your email" message.
+      const identities = (createdUser as any)?.identities;
+      if (Array.isArray(identities) && identities.length === 0) {
+        showImportantSuccess('Looks like you already have an account — taking you to log in.');
+        navigate(inviteToken ? `/login?invite=${inviteToken}` : '/login');
+        return;
       }
 
       if (!createdSession) {
@@ -255,7 +275,7 @@ export default function SimpleSignup() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate(inviteToken ? `/login?invite=${inviteToken}` : '/login')}
                 >
                   Go to login
                 </Button>
@@ -347,7 +367,7 @@ export default function SimpleSignup() {
               <div className="mt-4 text-center">
                 <Button
                   variant="link"
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate(inviteToken ? `/login?invite=${inviteToken}` : '/login')}
                   className="text-sm"
                 >
                   Already have an account? Log in

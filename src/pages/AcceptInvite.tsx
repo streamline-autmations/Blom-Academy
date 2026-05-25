@@ -2,10 +2,11 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useCourseInvites } from '../hooks/useCourseInvites';
+import { supabase } from '../lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { Loader2, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, RefreshCw, CheckCircle, XCircle, LogIn } from 'lucide-react';
 
 export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
@@ -13,7 +14,7 @@ export default function AcceptInvite() {
   const { user, session, loading } = useAuth();
   const { claimCourseInvite, loading: claiming } = useCourseInvites();
 
-  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'waiting'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'already-redeemed' | 'waiting'>('loading');
   const [message, setMessage] = useState('Please wait while we process your invite...');
   const [showRefresh, setShowRefresh] = useState(false);
   const claimAttemptedRef = useRef(false);
@@ -76,16 +77,43 @@ export default function AcceptInvite() {
           console.log('🎫 Claiming invite', { inviteToken, userId: user.id });
         }
 
+        // Belt-and-suspenders: ensure the logged-in user has a profile row.
+        // Users who arrive via the email-confirmation path never hit the signup
+        // step that normally creates it, which can break the course experience.
+        try {
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (!existingProfile) {
+            const md = (user.user_metadata ?? {}) as Record<string, any>;
+            await supabase.from('profiles').insert({
+              user_id: user.id,
+              first_name: md.first_name ?? '',
+              last_name: md.last_name ?? '',
+              username: md.username ?? (user.email ? user.email.split('@')[0] : ''),
+              phone: md.phone ?? '',
+              role: 'student',
+            });
+          }
+        } catch (profileErr) {
+          console.error('ensureProfile failed (non-fatal):', profileErr);
+        }
+
         const { courseSlug, error } = await claimCourseInvite(inviteToken);
 
         if (error) {
-          setStatus('error');
-          if (error.includes('expired') || error.includes('invalid')) {
-            setMessage('This invite has expired or is invalid. Please request a new invite.');
-          } else if (error.includes('already used') || error.includes('claimed')) {
+          if (error.toLowerCase().includes('redeemed') || error.toLowerCase().includes('already used') || error.toLowerCase().includes('claimed')) {
+            setStatus('already-redeemed');
             setMessage('This invite has already been used.');
+          } else if (error.toLowerCase().includes('expired') || error.toLowerCase().includes('invalid') || error.toLowerCase().includes('not found')) {
+            setStatus('error');
+            setMessage('This invite link has expired or is invalid. Please contact us at shopblomcosmetics@gmail.com and we\'ll sort it out.');
           } else {
-            setMessage(`Failed to accept invite: ${error}`);
+            setStatus('error');
+            setMessage(`Something went wrong: ${error}`);
           }
         } else if (courseSlug) {
           setStatus('success');
@@ -171,6 +199,25 @@ export default function AcceptInvite() {
             </div>
           )}
 
+          {status === 'already-redeemed' && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                <p className="font-semibold text-gray-800">You're already enrolled!</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  This invite has already been used to create your account. Just log in to access your course.
+                </p>
+              </div>
+              <Button onClick={() => navigate('/login')} className="w-full">
+                <LogIn className="h-4 w-4 mr-2" />
+                Log In to Your Account
+              </Button>
+              <p className="text-center text-xs text-gray-400">
+                Need help? Contact us at shopblomcosmetics@gmail.com
+              </p>
+            </div>
+          )}
+
           {status === 'error' && (
             <div className="space-y-4">
               <div className="text-center">
@@ -179,11 +226,13 @@ export default function AcceptInvite() {
                   <AlertDescription>{message}</AlertDescription>
                 </Alert>
               </div>
-              <div className="flex space-x-2">
-                <Button onClick={() => navigate('/')} className="flex-1">
-                  Go Home
-                </Button>
-              </div>
+              <Button onClick={() => navigate(inviteToken ? `/login?invite=${inviteToken}` : '/login')} className="w-full">
+                <LogIn className="h-4 w-4 mr-2" />
+                Log In Instead
+              </Button>
+              <Button onClick={() => navigate('/')} variant="outline" className="w-full">
+                Go Home
+              </Button>
             </div>
           )}
 
