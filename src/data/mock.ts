@@ -103,7 +103,7 @@ const allCourses: Course[] = [
     id: "trendy-ring-nail-art-course",
     title: "Trendy Ring Nail Art Course",
     slug: "trendy-ring-nail-art-course",
-    cover: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/Trendy-Ring-Cover_mdc3dy.jpg",
+    cover: "https://res.cloudinary.com/dbhiu7lv0/image/upload/v1785340197/Trendy-Ring-Course-IMG_yltkfx.png",
     summary: "Master modern ring nail trends, balanced placement, dimensional details, and a polished client-ready finish in four focused lessons.",
     level: "Beginner",
     tags: ["Nail Art", "Ring Designs", "3D Art", "Petal Paste"],
