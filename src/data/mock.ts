@@ -118,8 +118,11 @@ const allCourses: Course[] = [
       "Certificate of completion is available after the final practical submission."
     ],
     materials: [
-      { name: "White Petal Paste", image: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/IMG-20260728-WA0023_wssnnp.jpg", link: "https://blom-cosmetics.co.za/products/blom-cosmetics-petal-paste-white" },
-      { name: "Clear Petal Paste", image: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/IMG-20260728-WA0023_wssnnp.jpg", link: "https://blom-cosmetics.co.za/products/blom-cosmetics-petal-paste-clear" }
+      { name: "Blom Gel Paint Set", image: "https://res.cloudinary.com/drsrbzm2t/image/upload/v1772128822/GelPaints1_buvq6f.jpg", link: "https://blom-cosmetics.co.za/products/blom-gel-paint-set-12x-colours" },
+      { name: "Nail Forms", image: "https://res.cloudinary.com/drsrbzm2t/image/upload/v1764140870/nail-forms-white_u5dyzz.webp", link: "https://blom-cosmetics.co.za/products/nail-forms" },
+      { name: "Professional Detail Brush", image: "https://res.cloudinary.com/drsrbzm2t/image/upload/v1764062947/detail-brush-white_hyfyuu.webp", link: "https://blom-cosmetics.co.za/products/professional-detail-brush" },
+      { name: "White Petal Paste", image: "https://res.cloudinary.com/hmvetruz/image/upload/v1785259213/products/temp/PetalPasteWhite_hirzoi.jpg", link: "https://blom-cosmetics.co.za/products/blom-cosmetics-petal-paste-white" },
+      { name: "Clear Petal Paste", image: "https://res.cloudinary.com/hmvetruz/image/upload/v1785259046/products/temp/PetalPasteClear_qh62r2.jpg", link: "https://blom-cosmetics.co.za/products/blom-cosmetics-petal-paste-clear" }
     ]
   },
 ];

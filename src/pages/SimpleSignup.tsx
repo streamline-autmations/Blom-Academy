@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { showImportantError, showImportantSuccess, showError, showSuccess } from '@/utils/toast';
+import { claimCourseInviteSecurely } from '@/lib/claimCourseInvite';
 
 export default function SimpleSignup() {
   const navigate = useNavigate();
@@ -176,17 +177,7 @@ export default function SimpleSignup() {
         console.log('🎫 Processing invite token after signup:', inviteToken);
 
         try {
-          const { data: inviteData, error: inviteError } = await supabase.rpc('claim_course_invite', {
-            p_token: inviteToken,
-            p_user_id: user.id
-          });
-
-          if (inviteError) {
-            console.error('❌ Failed to redeem invite:', inviteError);
-            showError('Account created, but failed to redeem invite. Please try the invite link again.');
-            navigate('/home');
-            return;
-          }
+          const inviteData = await claimCourseInviteSecurely(inviteToken);
 
           if (inviteData && inviteData.course_id) {
             if (inviteData.course_slug) {

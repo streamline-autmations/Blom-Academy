@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
+import { claimCourseInviteSecurely } from '@/lib/claimCourseInvite';
 
 interface CourseInvite {
   id: string;
@@ -130,15 +131,7 @@ export const useCourseInvites = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase.rpc('claim_course_invite', {
-        p_token: normalizedToken,
-        p_user_id: user.id
-      });
-
-      if (error) {
-        setError(error.message);
-        return { courseSlug: null, error: error.message };
-      }
+      const data = await claimCourseInviteSecurely(normalizedToken);
 
       if (data && typeof data === 'object' && 'success' in data && (data as any).success === false) {
         const msg = String((data as any).error ?? 'Invite could not be redeemed');
@@ -152,7 +145,7 @@ export const useCourseInvites = () => {
 
       return { courseSlug: null, error: 'Invalid response from server' };
     } catch (err) {
-      const errorMessage = 'Failed to claim invite';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to claim invite';
       setError(errorMessage);
       return { courseSlug: null, error: errorMessage };
     } finally {

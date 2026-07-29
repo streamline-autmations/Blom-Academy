@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { claimCourseInviteSecurely } from '../lib/claimCourseInvite';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Alert, AlertDescription } from '../components/ui/alert';
@@ -59,29 +59,9 @@ export default function SimpleInvite() {
       console.log('👤 User ID:', user?.id);
 
       // Call the Supabase RPC function to claim the course invite
-      const { data, error } = await supabase.rpc('claim_course_invite', {
-        p_token: inviteToken,
-        p_user_id: user?.id // Pass the logged-in user's ID
-      });
+      const data = await claimCourseInviteSecurely(inviteToken);
 
-      console.log('📊 Invite claim result:', { data, error });
-
-      if (error) {
-        console.error('❌ Error claiming invite:', error);
-        
-        // Handle specific error cases
-        if (error.message.includes('expired') || error.message.includes('invalid')) {
-          setStatus('error');
-          setMessage('This invite has expired or is invalid. Please request a new invite.');
-        } else if (error.message.includes('already used') || error.message.includes('claimed')) {
-          setStatus('error');
-          setMessage('This invite has already been used.'); // Changed message to be more user-friendly
-        } else {
-          setStatus('error');
-          setMessage(`Failed to accept invite: ${error.message}`);
-        }
-        return;
-      }
+      console.log('Invite claim result:', { data });
 
       if (data && data.course_id) {
         console.log('✅ Invite claimed successfully, course ID:', data.course_id);
@@ -104,9 +84,9 @@ export default function SimpleInvite() {
         setMessage('Invalid response from server. Please try again.');
       }
     } catch (error) {
-      console.error('❌ Unexpected error processing invite:', error);
+      console.error('Unexpected error processing invite:', error);
       setStatus('error');
-      setMessage('An unexpected error occurred. Please try again.');
+      setMessage(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
     }
   };
 
