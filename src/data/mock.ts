@@ -99,6 +99,29 @@ const allCourses: Course[] = [
         { name: "Bowl of Water", image: "/water.webp" },
     ]
   },
+  {
+    id: "trendy-ring-nail-art-course",
+    title: "Trendy Ring Nail Art Course",
+    slug: "trendy-ring-nail-art-course",
+    cover: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/Trendy-Ring-Cover_mdc3dy.jpg",
+    summary: "Master modern ring nail trends, balanced placement, dimensional details, and a polished client-ready finish in four focused lessons.",
+    level: "Beginner",
+    tags: ["Nail Art", "Ring Designs", "3D Art", "Petal Paste"],
+    priceZAR: 650,
+    durationText: "Self-paced",
+    tagline: "Turn simple nails into head-turning masterpieces.",
+    description: "Learn Avané Crous's approach to refined ring nail art through four practical, step-by-step video lessons. The course is designed for beginners and professionals who want stronger composition, cleaner placement, and confident dimensional finishing.",
+    notes: [
+      "Lifetime access to all four course videos.",
+      "White and Clear Petal Paste are not included with the course.",
+      "Course purchasers receive a permanent, one-use Store offer: one White and one Clear Petal Paste for R399 together.",
+      "Certificate of completion is available after the final practical submission."
+    ],
+    materials: [
+      { name: "White Petal Paste", image: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/IMG-20260728-WA0023_wssnnp.jpg", link: "https://blom-cosmetics.co.za/products/blom-cosmetics-petal-paste-white" },
+      { name: "Clear Petal Paste", image: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/IMG-20260728-WA0023_wssnnp.jpg", link: "https://blom-cosmetics.co.za/products/blom-cosmetics-petal-paste-clear" }
+    ]
+  },
 ];
 
 export const courses: Course[] = allCourses.filter(course => course.slug !== 'online-watercolour-workshop');
@@ -129,6 +152,9 @@ export const modules: Module[] = [
   { id: "ff-m2", courseId: "faded-flowers-workshop", title: "Module 2 – Sketch & Techniques", order: 2, icon: "Pencil" },
   { id: "ff-m3", courseId: "faded-flowers-workshop", title: "Module 3 – Step-by-Step Designs", order: 3, icon: "Paintbrush" },
   { id: "ff-m4", courseId: "faded-flowers-workshop", title: "Module 4 – Certificate of Completion", order: 4, icon: "Award" },
+  // Trendy Ring Nail Art Course Modules
+  { id: "ring-m1", courseId: "trendy-ring-nail-art-course", title: "Trendy Ring Nail Art – Parts 1–4", order: 1, summary: "Four focused, step-by-step practical lessons.", icon: "Sparkles" },
+  { id: "ring-m2", courseId: "trendy-ring-nail-art-course", title: "Certificate of Completion", order: 2, summary: "Submit your finished ring nail designs for review.", icon: "Award" },
 ];
 
 export const lessons: Lesson[] = [
@@ -214,6 +240,12 @@ export const lessons: Lesson[] = [
 
   // Module 4 - Certificate of Completion
   { id: "flower-l4-1", moduleId: "flower-m4", title: "Certificate Mini-Assignment", durationSec: 60, poster: "https://picsum.photos/seed/flower-cert/400/225", content: `<h2>🎓 Mini Assignment for Your Certificate of Completion</h2><p>To receive your Certificate of Completion, you'll need to complete a short but important assignment. This ensures that you've practiced the skills taught in the workshop and can confidently apply them.</p><h3>What to Submit:</h3><ul><li><strong>3 individual photos</strong> – one of each design you learned in the workshop.</li><li><strong>1 group photo</strong> – showing all three designs together.</li></ul><h3>How to Submit:</h3><p>Please email your photos to: <strong><a href="mailto:shopblomcosmetics@gmail.com" class="text-primary hover:underline">shopblomcosmetics@gmail.com</a></strong></p><h3>What Happens Next:</h3><ol><li>Your work will be reviewed by your mentor.</li><li>If your designs meet the standard, you will receive your Certificate of Completion via email.</li><li>If improvements are needed, you'll receive personalized feedback and guidance on what to practice. Once you've refined your work, you can resubmit your photos for review again.</li></ol><p>This process is not about perfection—it's about growth. 💕 By completing this assignment, you'll not only earn your certificate but also gain confidence in creating these beautiful floral nail art designs.</p>`, resources: [], order: 1 },
+  // Trendy Ring Nail Art Course
+  { id: "ring-l1", moduleId: "ring-m1", title: "Part 1", durationSec: 300, poster: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/Trendy-Ring-Cover_mdc3dy.jpg", videoUrl: "https://iframe.mediadelivery.net/embed/715873/be5992d0-5ec8-4afd-a18b-2b5c45531d24?autoplay=false&loop=false&muted=false&preload=true&responsive=true", resources: [], order: 1 },
+  { id: "ring-l2", moduleId: "ring-m1", title: "Part 2", durationSec: 300, poster: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/Trendy-Ring-Cover_mdc3dy.jpg", videoUrl: "https://iframe.mediadelivery.net/embed/715873/79abf393-f2bc-42e2-bec1-f8fa48fe9ff1?autoplay=false&loop=false&muted=false&preload=true&responsive=true", resources: [], order: 2 },
+  { id: "ring-l3", moduleId: "ring-m1", title: "Part 3", durationSec: 300, poster: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/Trendy-Ring-Cover_mdc3dy.jpg", videoUrl: "https://iframe.mediadelivery.net/embed/715873/bd96b2f0-c920-46b7-8eab-f9b46c331775?autoplay=false&loop=false&muted=false&preload=true&responsive=true", resources: [], order: 3 },
+  { id: "ring-l4", moduleId: "ring-m1", title: "Part 4", durationSec: 300, poster: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/Trendy-Ring-Cover_mdc3dy.jpg", videoUrl: "https://iframe.mediadelivery.net/embed/715873/9350a44d-1986-476f-84a2-83db81bde01d?autoplay=false&loop=false&muted=false&preload=true&responsive=true", resources: [], order: 4 },
+  { id: "ring-l5", moduleId: "ring-m2", title: "Certificate Mini-Assignment", durationSec: 60, poster: "https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/Trendy-Ring-Cover_mdc3dy.jpg", content: `<h2>Certificate of Completion Assignment</h2><p>Create four finished ring nail designs that demonstrate the placement, balance, sculpting, and finishing techniques taught in the course.</p><h3>What to Submit:</h3><ul><li><strong>4 individual photos</strong> – one clear photo of each finished design.</li><li><strong>1 group photo</strong> – showing all four designs together.</li></ul><h3>How to Submit:</h3><p>Email your photos to <strong><a href="mailto:shopblomcosmetics@gmail.com" class="text-primary hover:underline">shopblomcosmetics@gmail.com</a></strong>.</p><h3>What Happens Next:</h3><ol><li>Your mentor reviews your work.</li><li>If it meets the course standard, your certificate is sent by email.</li><li>If any area needs refinement, you receive feedback and may resubmit.</li></ol>`, resources: [], order: 1 },
 ];
 
 export const getCourseData = (slug: string) => {

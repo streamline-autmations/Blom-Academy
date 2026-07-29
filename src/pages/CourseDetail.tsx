@@ -32,6 +32,7 @@ const CourseDetail = () => {
   const progress = getCourseProgress(course.id);
   const isCompleted = progress >= 100;
   const isHolidayCourse = course.slug === 'holiday-watercolor-workshop';
+  const isTrendyRingCourse = course.slug === 'trendy-ring-nail-art-course';
 
   return (
     <div className="container mx-auto py-10">
@@ -107,6 +108,35 @@ const CourseDetail = () => {
             })}
           </div>
         </div>
+      )}
+
+      {isTrendyRingCourse && (
+        <section className="mb-12 overflow-hidden rounded-3xl border border-primary/15 bg-gradient-to-br from-[#f7f0fb] via-white to-[#eee3f6] shadow-sm">
+          <div className="grid items-center md:grid-cols-[1.08fr_0.92fr]">
+            <img
+              src="https://res.cloudinary.com/dnlgohkcc/image/upload/v1785314350/IMG-20260728-WA0023_wssnnp.jpg"
+              alt="Exclusive Petal Paste course offer"
+              className="h-full min-h-64 w-full object-cover"
+            />
+            <div className="p-7 md:p-10">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-primary">Your course benefit</p>
+              <h2 className="text-3xl font-bold tracking-tight">Get both Petal Pastes for R399</h2>
+              <p className="mt-4 leading-7 text-body-text">
+                Buy one White and one Clear Petal Paste together for R399. Your offer never expires
+                and can be redeemed once using the Store account with the same email as your course purchase.
+              </p>
+              <Button asChild size="lg" className="mt-6 rounded-full px-7">
+                <a
+                  href="https://blom-cosmetics.co.za/offers/trendy-ring-petal-paste"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Claim your Petal Paste offer
+                </a>
+              </Button>
+            </div>
+          </div>
+        </section>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
